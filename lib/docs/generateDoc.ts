@@ -1,6 +1,6 @@
 import "server-only";
 import { callLlm, streamLlm, LlmError, type LlmMessage } from "@/lib/llm";
-import { DocError, type DocResult, findBannedPhrase, missingSections } from "@/lib/docs/shared";
+import { DocError, type DocResult, findBannedPhrase, missingSections, WATERMARK } from "@/lib/docs/shared";
 
 /**
  * Generic markdown-doc generator: calls the LLM, checks the output has the
@@ -56,5 +56,5 @@ export async function generateMarkdownDoc(params: {
     issues = issuesFor(result.content);
   }
 
-  return { content: result.content, model: result.model, usedFallback: result.usedFallback, warnings: issues };
+  return { content: result.content + WATERMARK, model: result.model, usedFallback: result.usedFallback, warnings: issues };
 }

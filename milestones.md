@@ -14,9 +14,9 @@ Each milestone ends with a **human review**. Per agents.md, the agent must compl
 **Goal:** The product looks like a polished SaaS someone would pay for.
 **Accept when:** every screen passes the agents.md Design bar; responsive at 375/768/1440; generation screen streaming feels smooth; zero console errors; reviewer subjectively approves the look — expect pushback and iterate.
 
-## M4 — Tiers & payments
-**Goal:** Money can be made.
-**Accept when:** free limits enforced; test-mode purchase grants credits via webhook; pro generation uses pro model + extras + critique pass; watermark only on free docs.
+## M4 — Tiers & payments (re-scoped: payments deferred)
+**Goal (revised per explicit human direction):** keep the product a single free, unlimited tier; add the watermark line. Payments, credits, magic-link auth, and the Pro pipeline are deferred — see spec.md §6 for the decision and the infra choices preserved for later.
+**Accept when:** every generated doc (spec.md, tasks.md, agents.md) carries the "Generated with SpecForge" watermark line, in both the review screen and the downloaded zip; tasks.md/spec.md accurately describe the deferral instead of unbuilt payment infrastructure.
 
 ## M5 — Launch hardening
 **Goal:** Safe to share publicly.

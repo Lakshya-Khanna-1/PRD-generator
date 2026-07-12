@@ -2,21 +2,33 @@
 
 Snapshot of project state for whoever (human or agent) picks this up next. Read `agents.md`, `spec.md`, `tasks.md`, `milestones.md` first — this file only covers what those don't: current status, what's been verified, and what's blocking.
 
-## Status: Milestone 3 of 5 complete (pending human review)
+## Status: Milestone 4 of 5 complete (pending human review)
 
 - [x] **Milestone 1 — Skeleton & LLM wrapper** (commit `8c0752d`)
 - [x] **Milestone 2 — Full generation pipeline** (commit `6b661b2`)
-- [x] **Milestone 3 — Real UI ("make the website look good")** — built and self-verified this session, **not yet committed** (see below)
-- [ ] Milestone 4 — Tiers, limits & payments — not started
+- [x] **Milestone 3 — Real UI ("make the website look good")** (commit `90436c4`, pushed)
+- [x] **Milestone 4 — Tiers, limits & payments** — **re-scoped** (payments deferred, see below); built and self-verified this session, not yet committed
 - [ ] Milestone 5 — Launch hardening — not started
 
-All completed milestones were self-verified per `agents.md`'s checklist (build/lint/typecheck clean, real end-to-end LLM calls, browser-driven manual testing, error paths triggered on purpose) before being presented for human review. M1 and M2 were approved; M3 is awaiting review.
+All completed milestones were self-verified per `agents.md`'s checklist (build/lint/typecheck clean, real end-to-end LLM calls, browser-driven manual testing, error paths triggered on purpose) before being presented for human review. M1, M2, and M3 were approved; M4 is awaiting review.
 
 ## Git
 
-- Repo is on branch `main` and, as of this session, up to date with `origin/main` (the earlier push-auth blocker noted in a prior version of this file has been resolved — `git status` now shows a clean sync with the remote).
+- Repo is on branch `main`, up to date with `origin/main` through M3 (`90436c4`).
 - Git author identity for this repo (local, not global): `Lakshya-Khanna-1 <lakshya1khanna@gmail.com>`.
-- **M3's work is uncommitted** — per `agents.md`, commits happen after human review approves the milestone, not before. Once approved, commit with a message like `Milestone 3: real UI (design system, landing page, create flow, review screen)`.
+- **M4's work is uncommitted** — per `agents.md`, commits happen after human review approves the milestone, not before.
+
+## Milestone 4 scope decision — payments deferred
+
+The human explicitly chose to skip payments/Lemon Squeezy entirely for this pass, and also chose to drop the monthly free-tier generation cap (task 4.1) rather than build it without a Pro tier to upsell into. Since spec.md §6 originally scoped magic-link auth and credit tracking as existing *only* to support purchases, deferring payments meant deferring auth, credits, and the Pro pipeline too — there was nothing left for them to gate. `spec.md` §6, `tasks.md`'s M4 section, and `milestones.md`'s M4 entry were all updated to reflect this honestly rather than describing unbuilt payment infrastructure as pending work.
+
+**What actually got built:** a single centralized watermark append (`WATERMARK` in `lib/docs/shared.ts`, applied in `lib/docs/generateDoc.ts`'s `generateMarkdownDoc()` — the shared function all three doc generators and the M3 regenerate endpoint already funnel through) so every generated doc, everywhere it's generated or regenerated, gets `"Generated with SpecForge"` at the bottom with zero per-route changes needed.
+
+**Infra decisions already made, preserved here for whenever payments are picked back up** (discussed with the human this session before the scope was reduced):
+- **Persistence:** Upstash Redis (not Postgres) — fits the actual data shape (counters, small records, no relational queries needed), no schema/migrations, serverless-friendly. `lib/rateLimit.ts`'s own comment already named this as the intended upgrade path.
+- **Magic-link email:** Resend.
+- **Fingerprinting** (for the deferred "per IP+fingerprint" free-tier cap): open-source `@fingerprintjs/fingerprintjs`, not the paid Fingerprint Pro service.
+- **Payments:** Lemon Squeezy — the human had not yet created an account/store when this was discussed; that setup (store, credit-pack product/variant, API key, webhook signing secret) is a prerequisite before Lemon Squeezy work can start.
 
 ## Running it
 
@@ -86,9 +98,11 @@ The SSE route double-called `controller.close()` on any stage failure, throwing 
 
 - Streaming LLM calls have no mid-stream stall timeout — the abort timer only covers time-to-first-byte. Revisit if stalled generations become a real problem.
 - Rate limiter is in-memory/per-instance. Fine for now per spec.md §6 ("IP-based is fine pre-auth"); needs a durable store (e.g. Upstash Redis) before running multiple server instances.
-- Ambitious/large-scope ideas can take several minutes end-to-end (each of spec/tasks/agents is its own multi-thousand-token streamed generation). Milestone 3's UI needs to make that wait feel intentional (progress state, streaming preview) rather than looking hung — spec.md §4/§8 already call for this.
+- Ambitious/large-scope ideas can take several minutes end-to-end (each of spec/tasks/agents is its own multi-thousand-token streamed generation). Milestone 3's `/create` generation screen already makes this feel intentional (stepper + live streaming preview) rather than looking hung.
 - Occasional transient `LLM_FAILURE` from OpenRouter under heavy back-to-back testing (looked like provider-side throttling, not a code bug) — the pipeline surfaces these as clean stage-level SSE errors rather than crashing, which is correct behavior; just noting it's not zero-flake.
 
-## Next up: Milestone 4
+## Next up: Milestone 5
 
-Per `tasks.md` — free-tier limits (3 gens/month per IP+fingerprint) with an upgrade-CTA limit screen, watermark line on free docs, magic-link email auth (purchase-only), Lemon Squeezy integration (credit packs) with a webhook → credit balance, Pro pipeline (GLM 5.2-class model, extras docs, critique pass, no watermark), credit deduction + balance display. The M3 Pricing section already has a "Coming soon" Pro card and disabled CTA button ready to wire up once payments land.
+Per `tasks.md` — error tracking (Sentry) + basic funnel analytics, token-cost dashboard/log check (verify < $0.01/free generation from real logs), SEO/meta/OG images + shareable example output page, legal pages (terms, privacy — state what happens to submitted ideas and which model providers process them), production deploy to Vercel with env vars + rate limits verified in prod, final regression (3 fresh ideas through the free flow in production).
+
+Note: M5's original "go/no-go for public launch" framing assumed monetization would exist by then. Since M4 deferred payments, M5 should launch as a free tool, not a paid product — worth confirming with the human before starting M5 in case that changes M5's scope too (e.g. whether a "Buy me a coffee"-style link belongs on the landing page instead of the deferred Pro tier, or whether M5 should also revisit the Lemon Squeezy question).

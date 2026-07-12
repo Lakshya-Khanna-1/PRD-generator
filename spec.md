@@ -40,12 +40,16 @@ All calls go through one server-side wrapper. Pipeline stages, **one LLM call ea
 - Fallback model configured on OpenRouter so provider outages don't break generation.
 - Target cost: < $0.01 per free generation, < $0.10 per pro generation. Log token usage per run.
 
-## 6. Tiers & monetization (v1)
+## 6. Tiers & monetization (v1 — payments deferred)
 
-- **Free:** 3 generations/month, core 3 docs, watermark line at bottom of each doc ("Generated with SpecForge").
-- **Pro:** one-time credit packs (e.g., 20 credits) AND/OR simple monthly plan — pick ONE for v1 (credit packs preferred; bursty usage). Pro = better model, extras docs, critique pass, no watermark, regeneration of individual docs.
-- Payments: Stripe or Lemon Squeezy (Lemon Squeezy preferred for simpler global tax handling; decide at Milestone 4).
-- **Auth:** none required for free tier v1 (rate-limit by IP + fingerprint). Email-based magic-link auth added only for purchase/credit tracking.
+**Current state, decided at Milestone 4:** payments are deferred. The product is a single free, unlimited tier: core 3 docs, watermark line at bottom of each doc ("Generated with SpecForge"), regeneration of individual docs included. No monthly cap, no auth, no payment provider. Abuse protection is the existing per-IP burst rate limit from Milestone 1 (`lib/rateLimit.ts` — 5 req/min/IP on `/api/generate/*`), not a persistent monthly quota.
+
+**Deferred Pro-tier vision** (unchanged from the original plan, to build whenever monetization is picked back up):
+- **Free:** 3 generations/month per IP+fingerprint, core 3 docs, watermark.
+- **Pro:** one-time credit packs (e.g., 20 credits) AND/OR simple monthly plan — pick ONE (credit packs preferred; bursty usage). Pro = better model, extras docs, critique pass, no watermark.
+- Payments: Lemon Squeezy (preferred for simpler global tax handling).
+- **Auth:** none required for free tier (rate-limit by IP + fingerprint). Email-based magic-link auth added only for purchase/credit tracking.
+- Infra choices already made for this future work (see `HANDOVER.md`): Upstash Redis for credit balances/purchase records/magic-link tokens/per-IP+fingerprint counts; Resend for magic-link email delivery; open-source `@fingerprintjs/fingerprintjs` for the client-side fingerprint half of "IP+fingerprint."
 
 ## 7. Output quality rubric (used in verification & critique pass)
 

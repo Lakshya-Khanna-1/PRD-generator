@@ -2,6 +2,9 @@ import "server-only";
 import { BANNED_FILLER_PHRASES } from "@/lib/promptGuidelines";
 import type { Brief } from "@/lib/brief";
 
+/** Appended to every generated doc. There's currently only one (free, unlimited) tier — see spec.md §6. */
+export const WATERMARK = "\n\n---\n*Generated with [SpecForge](https://specforge.app)*\n";
+
 /** Returns the first banned filler phrase found in the text (case-insensitive), or null. */
 export function findBannedPhrase(text: string): string | null {
   const lower = text.toLowerCase();

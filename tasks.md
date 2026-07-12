@@ -38,16 +38,18 @@ Tasks are grouped by milestone. Complete a milestone fully, run the verification
 
 **Human checkpoint:** the whole product should look launch-ready. Reviewer will judge the design hard.
 
-## Milestone 4 — Tiers, limits & payments
+## Milestone 4 — Tiers, limits & payments (re-scoped: payments deferred)
 
-- [ ] 4.1 Free-tier limits: 3 generations/month per IP+fingerprint; friendly limit-reached screen with upgrade CTA.
-- [ ] 4.2 Watermark line appended to free-tier docs.
-- [ ] 4.3 Magic-link email auth (only required at purchase).
-- [ ] 4.4 Decide + integrate payment provider (Lemon Squeezy preferred); one credit-pack product; webhook → credit balance.
-- [ ] 4.5 Pro pipeline: GLM 5.2-class model, extras docs (data-model.md, user-stories.md, CLAUDE.md/.cursorrules variant selector), critique pass, no watermark.
-- [ ] 4.6 Credit deduction + balance display; graceful handling of failed payment webhooks.
+Per explicit human direction, payments are deferred and the product stays a single free, unlimited tier for now. Everything below except 4.2 depended on a purchase existing (spec.md §6: auth/credits "added only for purchase/credit tracking") — with no payments, there's nothing for them to gate. See `HANDOVER.md` for the infra choices already decided for whenever this is picked back up (Upstash Redis, Resend, Lemon Squeezy).
 
-**Human checkpoint:** full paid flow tested end-to-end in payment provider test mode.
+- [x] 4.2 Watermark line appended to every generated doc (single tier now, so always-on — see `lib/docs/shared.ts` `WATERMARK`).
+- [ ] ~~4.1 Free-tier limits (3 generations/month per IP+fingerprint)~~ — **deferred.** No cap for now; the existing per-IP burst rate limit from M1 (`lib/rateLimit.ts`) remains the only abuse guard.
+- [ ] ~~4.3 Magic-link email auth~~ — **deferred.** Only existed to support purchase/credit tracking.
+- [ ] ~~4.4 Payment provider integration (Lemon Squeezy)~~ — **deferred.**
+- [ ] ~~4.5 Pro pipeline (GLM 5.2-class model, extras docs, critique pass, no watermark)~~ — **deferred.** Nothing to unlock it without payments.
+- [ ] ~~4.6 Credit deduction + balance display~~ — **deferred.**
+
+**Human checkpoint:** watermark line confirmed present on all 3 doc types, in both the review screen and the downloaded zip.
 
 ## Milestone 5 — Launch hardening
 
