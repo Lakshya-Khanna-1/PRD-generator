@@ -23,6 +23,15 @@ export interface CallLlmParams {
   timeoutMs?: number;
 }
 
+export interface StreamLlmParams {
+  tier: PricingTier;
+  messages: LlmMessage[];
+  maxTokens?: number;
+  timeoutMs?: number;
+  /** Called with each text delta as it streams in. */
+  onChunk: (delta: string) => void;
+}
+
 export interface LlmUsage {
   promptTokens: number;
   completionTokens: number;
@@ -128,6 +137,101 @@ async function requestOpenRouter(params: {
   return { content, model, usedFallback: false, usage };
 }
 
+async function requestOpenRouterStream(params: {
+  apiKey: string;
+  model: string;
+  messages: LlmMessage[];
+  maxTokens: number;
+  timeoutMs: number;
+  onChunk: (delta: string) => void;
+}): Promise<CallLlmResult> {
+  const { apiKey, model, messages, maxTokens, timeoutMs, onChunk } = params;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response: Response;
+  try {
+    response = await fetch(OPENROUTER_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://specforge.app",
+        "X-Title": "SpecForge",
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        max_tokens: maxTokens,
+        stream: true,
+        stream_options: { include_usage: true },
+      }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new LlmError(`Request to ${model} timed out after ${timeoutMs}ms`, "TIMEOUT", err);
+    }
+    throw new LlmError(`Network error calling ${model}`, "HTTP_ERROR", err);
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!response.ok || !response.body) {
+    const body = await response.text().catch(() => "");
+    throw new LlmError(`OpenRouter returned ${response.status} for ${model}: ${body.slice(0, 500)}`, "HTTP_ERROR");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let fullContent = "";
+  let usage: LlmUsage | null = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+      const payload = trimmed.slice("data:".length).trim();
+      if (payload === "[DONE]" || payload === "") continue;
+
+      let json: { choices?: { delta?: { content?: string } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } };
+      try {
+        json = JSON.parse(payload);
+      } catch {
+        continue;
+      }
+
+      const delta = json?.choices?.[0]?.delta?.content;
+      if (delta) {
+        fullContent += delta;
+        onChunk(delta);
+      }
+      if (json?.usage) {
+        usage = {
+          promptTokens: json.usage.prompt_tokens ?? 0,
+          completionTokens: json.usage.completion_tokens ?? 0,
+          totalTokens: json.usage.total_tokens ?? 0,
+        };
+      }
+    }
+  }
+
+  if (!fullContent) {
+    throw new LlmError(`OpenRouter returned no content for ${model}`, "NO_CONTENT");
+  }
+
+  return { content: fullContent, model, usedFallback: false, usage };
+}
+
 function logUsage(params: { tier: PricingTier; model: string; usedFallback: boolean; usage: LlmUsage | null }) {
   const { tier, model, usedFallback, usage } = params;
   console.log(
@@ -189,6 +293,73 @@ export async function callLlm(params: CallLlmParams): Promise<CallLlmResult> {
         maxTokens: resolvedMaxTokens,
         jsonMode,
         timeoutMs,
+      });
+      const fallbackResult = { ...result, usedFallback: true };
+      logUsage({ tier, model: fallbackModel, usedFallback: true, usage: fallbackResult.usage });
+      return fallbackResult;
+    } catch (fallbackError) {
+      throw new LlmError(
+        `Both primary model (${config.model}) and fallback model (${fallbackModel}) failed for tier "${tier}"`,
+        "ALL_MODELS_FAILED",
+        { primaryError, fallbackError }
+      );
+    }
+  }
+}
+
+/**
+ * Streaming variant of callLlm — invokes onChunk with each text delta as it
+ * arrives. Falls back to FALLBACK_MODEL only if the primary request fails
+ * before any content was streamed to the caller (a mid-stream failure after
+ * partial output is surfaced as an error instead, to avoid emitting
+ * duplicate/garbled text downstream).
+ */
+export async function streamLlm(params: StreamLlmParams): Promise<CallLlmResult> {
+  const { tier, messages, maxTokens, timeoutMs = DEFAULT_TIMEOUT_MS, onChunk } = params;
+
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    throw new LlmError("OPENROUTER_API_KEY is not set", "MISSING_KEY");
+  }
+
+  const config = TIER_CONFIG[tier];
+  if (!config.model) {
+    throw new LlmError(`No model configured for tier "${tier}" (check env vars)`, "MISSING_MODEL_CONFIG");
+  }
+
+  const resolvedMaxTokens = maxTokens ?? config.maxTokens;
+
+  let emittedAny = false;
+  const trackedOnChunk = (delta: string) => {
+    emittedAny = true;
+    onChunk(delta);
+  };
+
+  try {
+    const result = await requestOpenRouterStream({
+      apiKey,
+      model: config.model,
+      messages,
+      maxTokens: resolvedMaxTokens,
+      timeoutMs,
+      onChunk: trackedOnChunk,
+    });
+    logUsage({ tier, model: result.model, usedFallback: false, usage: result.usage });
+    return result;
+  } catch (primaryError) {
+    const fallbackModel = process.env.FALLBACK_MODEL;
+    if (!fallbackModel || emittedAny) {
+      throw primaryError;
+    }
+
+    try {
+      const result = await requestOpenRouterStream({
+        apiKey,
+        model: fallbackModel,
+        messages,
+        maxTokens: resolvedMaxTokens,
+        timeoutMs,
+        onChunk: trackedOnChunk,
       });
       const fallbackResult = { ...result, usedFallback: true };
       logUsage({ tier, model: fallbackModel, usedFallback: true, usage: fallbackResult.usage });
