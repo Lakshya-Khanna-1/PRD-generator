@@ -1,7 +1,8 @@
 import "server-only";
 import { callLlm, LlmError, type LlmMessage } from "@/lib/llm";
+import { MIN_IDEA_LENGTH } from "@/lib/constants";
 
-export const MIN_IDEA_LENGTH = 20;
+export { MIN_IDEA_LENGTH };
 
 export interface ClarifyQuestion {
   id: string;

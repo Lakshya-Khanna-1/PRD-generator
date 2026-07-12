@@ -27,14 +27,14 @@ Tasks are grouped by milestone. Complete a milestone fully, run the verification
 
 ## Milestone 3 — Real UI: "make the website look good"
 
-- [ ] 3.1 Design pass first: pick font pairing, palette with one accent, spacing scale; document tokens in Tailwind config.
-- [ ] 3.2 Landing page: hero with real example doc preview, 3-step how-it-works, pricing section (static for now), FAQ, footer.
-- [ ] 3.3 Idea input screen with quality placeholder example and validation.
-- [ ] 3.4 Clarification form UI: tappable options, "let AI decide" per question, progress indicator.
-- [ ] 3.5 Generation screen: sequential per-doc progress with streaming markdown preview — this must feel polished and satisfying.
-- [ ] 3.6 Review screen: tabbed doc viewer (rendered markdown), Copy / Regenerate-this-doc / Download zip actions.
-- [ ] 3.7 Responsive + accessibility pass at 375 / 768 / 1440px; keyboard navigation; empty/error/loading states for every screen.
-- [ ] 3.8 Anti-template pass: review every page against agents.md "Design bar"; fix anything that looks default.
+- [x] 3.1 Design pass first: pick font pairing, palette with one accent, spacing scale; document tokens in Tailwind config.
+- [x] 3.2 Landing page: hero with real example doc preview, 3-step how-it-works, pricing section (static for now), FAQ, footer.
+- [x] 3.3 Idea input screen with quality placeholder example and validation.
+- [x] 3.4 Clarification form UI: tappable options, "let AI decide" per question, progress indicator.
+- [x] 3.5 Generation screen: sequential per-doc progress with streaming markdown preview — this must feel polished and satisfying.
+- [x] 3.6 Review screen: tabbed doc viewer (rendered markdown), Copy / Regenerate-this-doc / Download zip actions.
+- [x] 3.7 Responsive + accessibility pass at 375 / 768 / 1440px; keyboard navigation; empty/error/loading states for every screen.
+- [x] 3.8 Anti-template pass: review every page against agents.md "Design bar"; fix anything that looks default.
 
 **Human checkpoint:** the whole product should look launch-ready. Reviewer will judge the design hard.
 
