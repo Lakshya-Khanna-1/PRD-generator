@@ -32,12 +32,15 @@ The human explicitly chose to skip payments/Lemon Squeezy entirely for this pass
 
 ## Running it
 
+Windows: double-click `Start-SpecForge.bat` — installs deps, checks `.env.local`, starts the dev server, opens the browser.
+
+Any OS:
 ```
 npm install
 npm run dev        # http://localhost:3000
 ```
 
-Requires `.env.local` (gitignored, not committed) with a real `OPENROUTER_API_KEY`. See `.env.example` for the full var list. Get a key at https://openrouter.ai/keys.
+Requires `.env.local` (gitignored, not committed) with a real `OPENROUTER_API_KEY`. See `.env.example` for the full var list, `README.md` for the project overview, and `SETUP.md` for the full local-setup + Vercel deploy walkthrough (this section is a quick-reference summary, SETUP.md is the source of truth).
 
 Dev-only test pages (404 in production builds):
 - `/dev/clarify-test` — hits `/api/generate/clarify` directly, shows raw JSON.
