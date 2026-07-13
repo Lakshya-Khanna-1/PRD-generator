@@ -51,13 +51,15 @@ Per explicit human direction, payments are deferred and the product stays a sing
 
 **Human checkpoint:** watermark line confirmed present on all 3 doc types, in both the review screen and the downloaded zip.
 
-## Milestone 5 — Launch hardening
+## Milestone 5 — Launch hardening (re-scoped: free-tool launch, no self-serve deploy)
 
-- [ ] 5.1 Error tracking (e.g., Sentry) + basic analytics (page views, funnel: land → input → generate → download).
-- [ ] 5.2 Token-cost dashboard/log check: verify < $0.01 per free generation from real logs.
-- [ ] 5.3 SEO/meta/OG images; shareable example output page.
-- [ ] 5.4 Legal pages: terms, privacy (state clearly what happens to submitted ideas and which model providers process them).
-- [ ] 5.5 Production deploy (Vercel), env vars set, rate limits verified in prod.
-- [ ] 5.6 Final full regression: 3 fresh ideas through free flow + 1 through pro flow in production.
+Per explicit human direction: no analytics ("no analytics since it is just free"), and the production deploy itself happens in the human's own Vercel account, not by the agent. See `HANDOVER.md` for the full deploy + post-deploy regression checklists.
 
-**Human checkpoint:** go/no-go for public launch.
+- [x] 5.1 Error tracking (Sentry, via `@sentry/nextjs`, gated on optional `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` — no-op until a real DSN is set). ~~Analytics~~ **dropped** per human direction.
+- [x] 5.2 Token-cost log check: verified $0.00296 per free generation from real `logUsage()` logs priced against live OpenRouter pricing — comfortably under the < $0.01 target.
+- [x] 5.3 SEO/meta/OG images (dynamic `next/og` image, full metadata); shareable example output page at `/example`.
+- [x] 5.4 Legal pages: `/terms`, `/privacy` — state clearly what happens to submitted ideas and which model providers process them (OpenRouter + configured DeepSeek/GLM/Gemini).
+- [ ] ~~5.5 Production deploy (Vercel)~~ — **prepped, not executed.** Repo is deploy-ready (clean build with no env vars set); exact steps + env vars documented in `HANDOVER.md`'s deploy checklist for the human to run themselves.
+- [ ] ~~5.6 Final full regression in production~~ — **documented, not executed** (requires the live URL from 5.5 first). Checklist in `HANDOVER.md`, adjusted to 4 free-flow ideas since Pro is deferred.
+
+**Human checkpoint:** review the code-complete build locally, then run the deploy checklist yourself; go/no-go for public launch happens after that.

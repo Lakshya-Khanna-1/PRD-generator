@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter, Geist_Mono } from "next/font/google";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -19,10 +20,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const TITLE = "SpecForge — Turn your app idea into agent-ready specs";
+const DESCRIPTION =
+  "Describe your app idea and get a downloadable, agent-ready spec.md, tasks.md, and agents.md — ready to drop into Cursor, Claude Code, or Codex.";
+
 export const metadata: Metadata = {
-  title: "SpecForge — Turn your app idea into agent-ready specs",
-  description:
-    "Describe your app idea and get a downloadable, agent-ready spec.md, tasks.md, and agents.md — ready to drop into Cursor, Claude Code, or Codex.",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: "SpecForge",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

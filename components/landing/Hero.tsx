@@ -46,6 +46,11 @@ export default function Hero() {
             <span className="ml-2 font-mono text-xs text-muted-foreground">spec.md — PlantPal</span>
           </div>
           <MarkdownDoc content={EXAMPLE_SPEC_MD} className="text-sm" />
+          <div className="mt-4 border-t border-border pt-4 text-center">
+            <Link href="/example" className="text-sm font-medium text-accent hover:text-accent-hover">
+              View the full example (spec.md, tasks.md, agents.md) →
+            </Link>
+          </div>
         </Card>
       </Container>
     </section>

@@ -2,21 +2,21 @@
 
 Snapshot of project state for whoever (human or agent) picks this up next. Read `agents.md`, `spec.md`, `tasks.md`, `milestones.md` first — this file only covers what those don't: current status, what's been verified, and what's blocking.
 
-## Status: Milestone 4 of 5 complete (pending human review)
+## Status: Milestone 5 of 5 complete (pending human review) — code-complete, not yet deployed
 
 - [x] **Milestone 1 — Skeleton & LLM wrapper** (commit `8c0752d`)
 - [x] **Milestone 2 — Full generation pipeline** (commit `6b661b2`)
 - [x] **Milestone 3 — Real UI ("make the website look good")** (commit `90436c4`, pushed)
-- [x] **Milestone 4 — Tiers, limits & payments** — **re-scoped** (payments deferred, see below); built and self-verified this session, not yet committed
-- [ ] Milestone 5 — Launch hardening — not started
+- [x] **Milestone 4 — Tiers, limits & payments** — **re-scoped** (payments deferred, see below) (commit `27ca98c`, pushed)
+- [x] **Milestone 5 — Launch hardening** — **re-scoped** (no analytics, no self-serve deploy — see below); built and self-verified this session, not yet committed
 
-All completed milestones were self-verified per `agents.md`'s checklist (build/lint/typecheck clean, real end-to-end LLM calls, browser-driven manual testing, error paths triggered on purpose) before being presented for human review. M1, M2, and M3 were approved; M4 is awaiting review.
+All completed milestones were self-verified per `agents.md`'s checklist (build/lint/typecheck clean, real end-to-end LLM calls, browser-driven manual testing, error paths triggered on purpose) before being presented for human review. M1-M4 were approved; M5 is awaiting review. **The app itself is not yet live in production** — see the deploy checklist below; that step requires the human's own Vercel login.
 
 ## Git
 
-- Repo is on branch `main`, up to date with `origin/main` through M3 (`90436c4`).
+- Repo is on branch `main`, up to date with `origin/main` through M4 (`27ca98c`).
 - Git author identity for this repo (local, not global): `Lakshya-Khanna-1 <lakshya1khanna@gmail.com>`.
-- **M4's work is uncommitted** — per `agents.md`, commits happen after human review approves the milestone, not before.
+- **M5's work is uncommitted** — per `agents.md`, commits happen after human review approves the milestone, not before.
 
 ## Milestone 4 scope decision — payments deferred
 
@@ -101,8 +101,44 @@ The SSE route double-called `controller.close()` on any stage failure, throwing 
 - Ambitious/large-scope ideas can take several minutes end-to-end (each of spec/tasks/agents is its own multi-thousand-token streamed generation). Milestone 3's `/create` generation screen already makes this feel intentional (stepper + live streaming preview) rather than looking hung.
 - Occasional transient `LLM_FAILURE` from OpenRouter under heavy back-to-back testing (looked like provider-side throttling, not a code bug) — the pipeline surfaces these as clean stage-level SSE errors rather than crashing, which is correct behavior; just noting it's not zero-flake.
 
-## Next up: Milestone 5
+## Milestone 5 scope decisions
 
-Per `tasks.md` — error tracking (Sentry) + basic funnel analytics, token-cost dashboard/log check (verify < $0.01/free generation from real logs), SEO/meta/OG images + shareable example output page, legal pages (terms, privacy — state what happens to submitted ideas and which model providers process them), production deploy to Vercel with env vars + rate limits verified in prod, final regression (3 fresh ideas through the free flow in production).
+Confirmed with the human before building:
+- **Launch as a free tool.** M5's original "go/no-go for public launch" framing assumed monetization existed by now; since M4 deferred payments, M5 proceeds as originally scoped but framed around a free product, not a paid one.
+- **No analytics.** "No analytics since it is just free" — task 5.1's funnel-analytics half is dropped entirely; only error tracking (Sentry) was built.
+- **No deploy by me.** The human has a Vercel account and will connect/deploy it themselves — I can't do a Vercel login headlessly. My job was to make the repo deploy-ready and hand over an exact checklist, not to run the deploy or the prod regression.
+- **Legal identity:** Terms/Privacy use "Lakshya Khanna" / `lakshya1khanna@gmail.com` (this repo's existing git author identity), no specific jurisdiction named (kept generic) — confirmed with the human rather than inventing a business entity.
 
-Note: M5's original "go/no-go for public launch" framing assumed monetization would exist by then. Since M4 deferred payments, M5 should launch as a free tool, not a paid product — worth confirming with the human before starting M5 in case that changes M5's scope too (e.g. whether a "Buy me a coffee"-style link belongs on the landing page instead of the deferred Pro tier, or whether M5 should also revisit the Lemon Squeezy question).
+## What's built (M5)
+
+**Error tracking** — `@sentry/nextjs`, wired through `instrumentation.ts` (server+edge) and `instrumentation-client.ts` (browser), both fully gated on `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` env vars being set — with nothing configured, `Sentry.init` is never called and the app behaves exactly as before. `next.config.ts` wraps the config with `withSentryConfig`, source-map upload explicitly disabled (`sourcemaps: { disable: true }`) so the build never needs a `SENTRY_AUTH_TOKEN`. `app/global-error.tsx` is a branded (Ember Forge, not default Next.js) error boundary that calls `Sentry.captureException`. **Verified:** build stays clean with zero Sentry env vars set (proving the no-op gating), and the error boundary renders correctly when a client error is triggered. **Not verified:** actual event delivery to a real Sentry project — there's no DSN to test against yet. Get one free at sentry.io and set `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN` to activate it.
+
+**Cost verification** — ran one real end-to-end generation (idea: houseplant watering tracker) against a temporary local instance with logs captured, summed the `lib/llm.ts` `logUsage()` token counts across all 5 LLM calls (brief, spec, tasks, agents, plus one automatic retry), and priced them against OpenRouter's live `/api/v1/models` pricing for `deepseek/deepseek-v4-flash` ($0.077/M prompt tokens, $0.154/M completion tokens as of this session). **Actual cost: $0.00296 per generation** — well under spec.md §10's <$0.01 target.
+
+**SEO / OG / example page** — `metadataBase` added to `app/layout.tsx` (driven by `NEXT_PUBLIC_SITE_URL`, new `lib/site.ts`), full Open Graph + Twitter card metadata, a dynamically-generated branded OG image at `app/opengraph-image.tsx` (`next/og`'s `ImageResponse`, no external design asset needed). New public `/example` page (`app/example/page.tsx` + `components/example/ExampleTabs.tsx`) showing a complete example doc set (spec.md/tasks.md/agents.md, extended in `lib/exampleDoc.ts`) for sharing — linked from the landing hero and footer.
+
+**Legal pages** — `/terms` and `/privacy` (content in `lib/legal.ts`, rendered through the existing `MarkdownDoc` component via a shared `components/legal/LegalPage.tsx` — reuse, not new styling). Privacy policy explicitly names OpenRouter and the currently-configured underlying providers (DeepSeek/GLM/Gemini) as who processes submitted ideas, states there's no account system/persistent storage yet, and that IP addresses are used only for short-lived in-memory rate limiting. Linked from the footer on every page.
+
+New dependency: `@sentry/nextjs` — justified per tasks.md 5.1's explicit error-tracking requirement.
+
+## Deploy checklist (for the human — requires your own Vercel login)
+
+1. **Connect the repo.** In the Vercel dashboard, "Add New Project" → import `Lakshya-Khanna-1/PRD-generator` from GitHub. Framework preset should auto-detect Next.js.
+2. **Set environment variables** (Project Settings → Environment Variables), from `.env.example`:
+   - `OPENROUTER_API_KEY` — required, your real key.
+   - `DEFAULT_MODEL`, `PRO_MODEL`, `FALLBACK_MODEL` — copy the values from `.env.example` (or your own choices).
+   - `NEXT_PUBLIC_SITE_URL` — set to your actual production domain once known (e.g. `https://specforge.vercel.app` or a custom domain) — this drives OG image/metadata absolute URLs.
+   - `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` — optional; leave unset to skip error tracking for launch, or create a free Sentry project first and set both to the same DSN.
+3. **Deploy.** Vercel will run `npm run build` automatically.
+4. **Important caveat — rate limiting on Vercel:** `lib/rateLimit.ts` is in-memory, scoped to a single server process. Vercel's serverless functions are not one persistent process — concurrent or cold-started invocations can each get their own memory, so the "5 req/min/IP" burst guard in `proxy.ts` degrades to "5 req/min/IP/instance" in production, not a hard global cap. This was flagged as a known limitation since M1; it's not a launch blocker for a free, low-traffic tool, but don't rely on it as a strict abuse guard under real load. Upgrading to Upstash Redis (already scoped in the M4 section above) is the fix if abuse becomes a real problem.
+5. **Smoke-test in prod:** visit the deployed URL, confirm the landing page loads, `/create` runs a real generation end-to-end, and `/example`, `/terms`, `/privacy` all render.
+
+## Post-deploy regression checklist (for the human, once live)
+
+Per tasks.md 5.6, adjusted since Pro is deferred — run 4 fresh ideas through the free flow in production (not "3 free + 1 pro"), covering the same variety as the M2 quality bench:
+1. A vague, underspecified idea.
+2. A detailed, well-specified idea.
+3. A weird/whimsical idea.
+4. An idea written in a non-technical founder's voice.
+
+For each: confirm clarify questions are sensible, generation completes without errors, the review screen shows all 3 docs with the watermark line, and the downloaded zip opens correctly.

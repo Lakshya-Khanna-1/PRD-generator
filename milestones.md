@@ -18,9 +18,9 @@ Each milestone ends with a **human review**. Per agents.md, the agent must compl
 **Goal (revised per explicit human direction):** keep the product a single free, unlimited tier; add the watermark line. Payments, credits, magic-link auth, and the Pro pipeline are deferred — see spec.md §6 for the decision and the infra choices preserved for later.
 **Accept when:** every generated doc (spec.md, tasks.md, agents.md) carries the "Generated with SpecForge" watermark line, in both the review screen and the downloaded zip; tasks.md/spec.md accurately describe the deferral instead of unbuilt payment infrastructure.
 
-## M5 — Launch hardening
-**Goal:** Safe to share publicly.
-**Accept when:** deployed to production; funnel analytics recording; cost-per-generation verified from logs; legal pages live; final regression passes in prod.
+## M5 — Launch hardening (re-scoped: free-tool launch, no self-serve deploy)
+**Goal (revised per explicit human direction):** code-complete and safe to share publicly as a free tool — no analytics, deploy executed by the human via their own Vercel account rather than by the agent.
+**Accept when:** error tracking wired up (no-op safe without a DSN); cost-per-generation verified from real logs (< $0.01); legal pages live in the repo; SEO/OG/example page built; a step-by-step deploy checklist and a post-deploy regression checklist exist in `HANDOVER.md` for the human to execute. Production deploy itself and the prod regression pass happen after this milestone is approved, not as part of it.
 
 ## Review protocol (every milestone)
 The agent's review request must include:
