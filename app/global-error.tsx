@@ -15,8 +15,11 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
   }, [error]);
 
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col items-center justify-center bg-background px-6 text-center text-foreground">
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} h-full antialiased`} suppressHydrationWarning>
+      <body
+        className="flex min-h-full flex-col items-center justify-center bg-background px-6 text-center text-foreground"
+        suppressHydrationWarning
+      >
         <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Error</p>
         <h1 className="mt-3 font-display text-3xl font-semibold sm:text-4xl">Something broke.</h1>
         <p className="mt-3 max-w-sm text-muted-foreground">
